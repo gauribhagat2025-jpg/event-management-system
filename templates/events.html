@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Management System</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            color: #222;
+        }
+
+        nav {
+            background: #222;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        nav h2 {
+            color: white;
+            margin: 0;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin-left: 20px;
+        }
+
+        nav a:hover {
+            text-decoration: underline;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1100px;
+            margin: 30px auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        #events {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .event-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .event-card h3 {
+            margin-top: 0;
+        }
+
+        .event-card p {
+            margin: 8px 0;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 15px;
+            border: none;
+            border-radius: 5px;
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        button:disabled {
+            background: #999;
+            cursor: not-allowed;
+        }
+
+        .full {
+            color: red;
+            font-weight: bold;
+        }
+
+        .available {
+            color: green;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+<nav>
+    <h2>Event Management System</h2>
+
+    <div>
+        <a href="/">Events</a>
+        <a href="/login">Login</a>
+        <a href="/register">Register</a>
+        <a href="/admin">Admin</a>
+    </div>
+</nav>
+
+<div class="container">
+
+    <h1>Upcoming Events</h1>
+
+    <div id="events">
+        <p>Loading events...</p>
+    </div>
+
+</div>
+
+<script>
+
+async function loadEvents() {
+
+    const eventsContainer = document.getElementById("events");
+
+    try {
+
+        const response = await fetch("/api/events");
+        const data = await response.json();
+
+        if (!data.success || !data.events || data.events.length === 0) {
+            eventsContainer.innerHTML = "<p>No upcoming events available.</p>";
+            return;
+        }
+
+        eventsContainer.innerHTML = "";
+
+        data.events.forEach(event => {
+
+            const isFull = event.registered >= event.capacity;
+
+            const card = document.createElement("div");
+            card.className = "event-card";
+
+            card.innerHTML = `
+                <h3>${event.name}</h3>
+
+                <p>
+                    <strong>Date:</strong>
+                    ${event.date}
+                </p>
+
+                <p>
+                    <strong>Time:</strong>
+                    ${event.start_time} - ${event.end_time}
+                </p>
+
+                <p class="${isFull ? 'full' : 'available'}">
+                    <strong>Registered:</strong>
+                    ${event.registered} / ${event.capacity}
+                </p>
+
+                ${
+                    isFull
+                    ? `<button disabled>Event Full</button>`
+                    : `<button onclick="registerEvent(${event.id})">
+                        Register
+                       </button>`
+                }
+            `;
+
+            eventsContainer.appendChild(card);
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        eventsContainer.innerHTML =
+            "<p>Unable to load events. Please try again.</p>";
+    }
+}
+
+
+async function registerEvent(eventId) {
+
+    try {
+
+        const response = await fetch(
+            `/api/events/${eventId}/register`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            }
+        );
+
+        const data = await response.json();
+
+        alert(data.message || "Registration completed.");
+
+        if (response.ok) {
+            loadEvents();
+        }
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert("Something went wrong. Please try again.");
+    }
+}
+
+
+loadEvents();
+
+</script>
+
+</body>
+</html>
