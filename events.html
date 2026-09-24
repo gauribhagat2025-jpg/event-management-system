@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Events</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background: #f4f6f8;
+        }
+
+        nav {
+            background: #1f2937;
+            color: white;
+            padding: 20px;
+        }
+
+        nav a {
+            color: white;
+            margin-left: 20px;
+        }
+
+        .container {
+            width: 85%;
+            margin: 40px auto;
+        }
+
+        .events {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .event-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px #ccc;
+        }
+
+        button {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 6px;
+            background: #2563eb;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:disabled {
+            background: gray;
+        }
+
+        .capacity {
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+<nav>
+    <strong>Campus Event Management</strong>
+
+    <a href="/">Events</a>
+    <a href="/login">Login</a>
+    <a href="/register">Register</a>
+    <a href="/admin">Admin</a>
+</nav>
+
+<div class="container">
+
+    <h1>Upcoming Events</h1>
+
+    <div id="events">
+        Loading events...
+    </div>
+
+</div>
+
+<script>
+
+async function loadEvents() {
+
+    const container = document.getElementById("events");
+
+    const response = await fetch("/api/events");
+
+    const data = await response.json();
+
+    if (data.events.length === 0) {
+
+        container.innerHTML =
+            "<p>No events available yet.</p>";
+
+        return;
+    }
+
+    container.className = "events";
+
+    container.innerHTML = data.events.map(event => {
+
+        const full =
+            event.registered >= event.capacity;
+
+        return `
+            <div class="event-card">
+
+                <h2>${event.name}</h2>
+
+                <p>📅 ${event.date}</p>
+
+                <p>⏰ ${event.start_time} -
+                    ${event.end_time}</p>
+
+                <p class="capacity">
+                    Registered:
+                    ${event.registered} /
+                    ${event.capacity}
+                </p>
+
+                <button
+                    onclick="registerEvent(${event.id})"
+                    ${full ? "disabled" : ""}
+                >
+                    ${full ? "Event Full" : "Register"}
+                </button>
+
+            </div>
+        `;
+
+    }).join("");
+}
+
+
+async function registerEvent(eventId) {
+
+    const response = await fetch(
+        `/api/events/${eventId}/register`,
+        {
+            method: "POST"
+        }
+    );
+
+    const data = await response.json();
+
+    alert(data.message);
+
+    loadEvents();
+}
+
+
+loadEvents();
+
+</script>
+
+</body>
+</html>
